@@ -1,0 +1,12 @@
+# The live store - never in git. It holds customer phone numbers and bookings,
+# and the deployed one lives on the Render disk, not in the repo.
+baari.json
+baari.json.tmp
+
+# Real credentials. .env.example is the tracked one and holds only blanks.
+.env
+.env.*
+!.env.example
+
+node_modules/
+.DS_Store

@@ -1,0 +1,36 @@
+# Render blueprint. Singapore region - nearest to India (Render has no India
+# region; SG is ~60-90ms server-to-server, imperceptible in a WhatsApp flow, and
+# DPDP does not require India hosting - s.16 blacklist model, none notified).
+#
+# MUST be the paid starter plan: the free tier sleeps on idle, and a sleeping
+# webhook target drops PhonePe callbacks and delays WhatsApp replies by ~50s.
+#
+# Deploy: push this repo to GitHub -> render.com -> New + -> Blueprint -> pick
+# the repo. Set the secret env vars in the dashboard when prompted.
+#
+# The JSON store lives on the persistent disk below; /health is the liveness
+# probe. Back up by downloading /var/data/baari.json.
+
+services:
+  - type: web
+    name: pakka
+    runtime: node
+    region: singapore
+    plan: starter            # always-on; free tier sleeps and drops webhooks
+    buildCommand: ""         # no dependencies, nothing to build
+    startCommand: node server.js
+    healthCheckPath: /health
+    disk:
+      name: pakka-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: DB_PATH
+        value: /var/data/baari.json
+      - key: WA_VERIFY_TOKEN
+        sync: false          # set in dashboard: any string you choose
+      - key: SARVAM_KEY
+        sync: false          # api.sarvam.ai - one key for both the Hindi LLM
+                             # fallback and reading payment screenshots
+      - key: NOTIFY_WINDOW_MIN
+        value: "20"

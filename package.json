@@ -1,0 +1,12 @@
+{
+  "name": "pakka",
+  "version": "1.0.0",
+  "description": "Hindi WhatsApp booking and UPI advances for Indian sports venues.",
+  "license": "BSD-3-Clause",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test.js && node test-notify.js && node test-psp.js && node test-receipt.js && node test-relay.js && node test-sarvam.js"
+  },
+  "engines": { "node": ">=18" }
+}
