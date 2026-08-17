@@ -2,17 +2,13 @@
 
 Customers book on WhatsApp, in Hindi. You approve 'Yes' with one tap. The
 advance goes to **your own UPI id** — this software records but never touches
-your money. Schedule to reconciled, in one place: booking, approval, advance,
-and a confirmation the moment your bank tells you it arrived.
+your money. Booking, approval, advance, and a confirmation the moment your
+bank tells you it arrived, all in one place.
 
 Built for sports venues — the examples below are grounds, courts, cricket. The
 same pattern fits any appointment-based business that takes an advance before
 the slot: clinics, salons, coaching classes, rental equipment. Edit `venues.js`
 to describe your own business instead of a turf.
-
-*Not insurance billing.* If you know "RCM" from healthcare, that usually means
-claims, coding, payer reimbursement — none of that is here. This is the
-booking-and-collection half only: you still see and approve every booking.
 
 ---
 
