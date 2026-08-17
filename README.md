@@ -49,7 +49,7 @@ no keys.
 5. On the app dashboard, find **WhatsApp** in the product list and click
    **Set up**.
 
-Meta will create a test number for you automatically. **Ignore it.** 
+Meta will create a test number for you automatically. **Ignore it.**
 
 ## Step 2 — Add your real number
 
@@ -60,10 +60,10 @@ Meta will create a test number for you automatically. **Ignore it.**
 
 Now copy two values from the API Setup page and paste them somewhere:
 
-| What | Where | Looks like |
-|---|---|---|
-| **Phone number ID** | under the "From" dropdown, after you select your number | `109xxxxxxxxxxx` — about 15 digits |
-| **WhatsApp Business Account ID** | on the same page, often labelled *WABA ID* | another long number |
+| What                                   | Where                                                   | Looks like                            |
+| -------------------------------------- | ------------------------------------------------------- | ------------------------------------- |
+| **Phone number ID**              | under the "From" dropdown, after you select your number | `109xxxxxxxxxxx` — about 15 digits |
+| **WhatsApp Business Account ID** | on the same page, often labelled*WABA ID*             | another long number                   |
 
 ## Step 3 — Get an access token
 
@@ -102,10 +102,9 @@ what is bookable, your sports and rates, and how much advance you take.
 Two answers decide whether any of this works:
 
 - **Your own WhatsApp number**, with country code and no `+`. Any message from
-  this number is treated as *you*, the owner. One wrong digit and you will
-  receive your customers' replies while they receive nothing.
+  this number is treated as *you*, the owner.
 - **Your existing UPI id**, like `yourturf@okhdfcbank`. Do not create a new one.
-  Customers pay this directly and the money never passes through this software.
+- Customers pay this directly and the money never passes through this software.
 
 Write the Hindi the way your customers actually say it. If they say
 `बॉक्स क्रिकेट`, put that.
@@ -117,6 +116,11 @@ server in the next step, and it is not written to any file.
 > environment variable and nowhere else — not in `venues.js`, not in a commit,
 > not in a chat. `venues.js` in the repo is only a sample, used when
 > `VENUES_JSON` is unset.
+
+If you would rather keep your venue in a file you can read and annotate, write
+**`venues.local.js`** instead — same shape as the sample in `venues.js`, but it
+is JavaScript so you can comment it freely, and it is gitignored. The server
+prefers `VENUES_JSON`, then `venues.local.js`, then the sample.
 
 ## Step 5 — Make a server
 
@@ -132,7 +136,6 @@ certificate. Your laptop does not qualify.
    - **`WA_VERIFY_TOKEN`** — any word you invent. Write it down; you type the
      same word into Meta in Step 6.
 5. Choose the **Starter** plan, about ₹600/month.
-
 
 ## Step 6 — Connect Meta to your server
 
@@ -223,12 +226,12 @@ nobody to ask.
 
 ## What it costs
 
-| | |
-|---|---|
-| This software | free |
-| WhatsApp Cloud API | free — Meta charges nothing to host it |
-| Messages | free within 24h of a customer writing to you |
-| Render Starter | ~₹600/month |
+|                    |                                              |
+| ------------------ | -------------------------------------------- |
+| This software      | free                                         |
+| WhatsApp Cloud API | free — Meta charges nothing to host it      |
+| Messages           | free within 24h of a customer writing to you |
+| Render Starter     | ~₹600/month                                 |
 
 Every message in a booking is a reply to a customer who just wrote in, so in
 normal use Meta bills you nothing at all.

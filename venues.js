@@ -19,6 +19,32 @@
    Inbound messages are routed by waPhoneId, which Meta puts in every webhook,
    so `code` is only used for the optional wa.me deep link. */
 
+/* Three places a venue can come from, in order:
+
+     1. VENUES_JSON        an environment variable. Production. Nothing private
+                           enters the repo, so a public fork leaks nothing.
+     2. venues.local.js    a file you write by hand, gitignored. Same shape as
+                           the sample below, and it is JavaScript, so you can
+                           comment it however you like. JSON cannot carry
+                           comments, which is the whole reason this exists.
+     3. the sample below   committed, no token, runs the tests. */
+
+/* venues.local.js is optional and gitignored. require() throwing MODULE_NOT_FOUND
+   is the normal case; anything else is a real error in a file you wrote, so it
+   is reported rather than swallowed. */
+let local;
+function tryLocal() {
+  try {
+    return require('./venues.local.js');
+  } catch (e) {
+    if (e.code !== 'MODULE_NOT_FOUND' || !/venues\.local/.test(e.message)) {
+      console.error('venues.local.js exists but could not be loaded: ' + e.message);
+      process.exit(1);
+    }
+    return null;
+  }
+}
+
 /* A bad paste should stop the server, loudly, at boot. Falling back to the
    sample would leave a venue silently answering with someone else's prices. */
 if (process.env.VENUES_JSON) {
@@ -40,6 +66,8 @@ if (process.env.VENUES_JSON) {
     process.exit(1);
   }
   module.exports = parsed;
+} else if ((local = tryLocal())) {
+  module.exports = local;
 } else {
 
 module.exports = [
