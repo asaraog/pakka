@@ -17,7 +17,7 @@
 
    !! Endpoint, header and model names below are from Sarvam's documented API
    !! (chat/completions, `api-subscription-key`). Verify against live docs when
-   !! the key is first set - same drill as psp.js. */
+   !! the key is first set - same drill as any vendor API. */
 
 const URL = process.env.SARVAM_URL || 'https://api.sarvam.ai/v1/chat/completions';
 const MODEL = process.env.SARVAM_MODEL || 'sarvam-105b';
