@@ -91,10 +91,6 @@ Keep it somewhere for a moment — Step 5 puts it in place.
 
 ## Step 4 — Describe your venue
 
-Two ways. Both end with a block of JSON you paste into your server in Step 5.
-
-**Answer questions:**
-
 ```bash
 node onboard.js
 ```
@@ -103,19 +99,16 @@ It checks your token and phone number first, so a wrong value fails in the first
 thirty seconds rather than after twenty questions. Then it asks about your hours,
 what is bookable, your sports and rates, and how much advance you take.
 
-**Or fill it in yourself:**
+At the end it prints two blocks. **Keep both** — the next two steps use them:
 
-```bash
-cp venues.js venues.local.js     # then edit it
-node onboard.js --print
-```
+1. Five values — your token, your phone number, your UPI id — that go into
+   Render, never into a file.
+2. A ready-to-paste chunk of `venues.js` — your name, hours, grounds and rates —
+   with nothing private in it. **Edit `venues.js` with it now**, directly on
+   your fork on GitHub or on your machine, and commit it. This file is meant to
+   be public: it's what makes the setup on your fork match your actual venue.
 
-`venues.local.js` is gitignored and it is JavaScript, so you can comment it
-however you like — useful if you run several grounds or want to remember why a
-rate is what it is. `--print` turns whatever the server would load into the JSON
-for Step 5.
-
-Either way, two answers decide whether this works:
+Two of the values decide whether any of this works:
 
 - **Your own WhatsApp number**, with country code and no `+`. Any message from
   this number is treated as *you*, the owner. One wrong digit and you will
@@ -126,25 +119,20 @@ Either way, two answers decide whether this works:
 Write the Hindi the way your customers actually say it. If they say
 `बॉक्स क्रिकेट`, put that.
 
-> The JSON holds your token, your phone number and your UPI id. It belongs in an
-> environment variable and nowhere else — not in a committed file, not in a chat.
-
 ## Step 5 — Make a server
 
 Meta will only deliver messages to a public address with a valid HTTPS
 certificate. Your laptop does not qualify.
 
-1. **Fork** this repository to your own GitHub account (one button, top right).
+1. **Fork** this repository to your own GitHub account, if you haven't already
+   (one button, top right).
 2. Go to [render.com](https://render.com), sign up, and choose
    **New → Blueprint**.
-3. Select your repository. Render reads `render.yaml` and configures itself.
-4. When prompted for environment variables, set both:
-   - **`VENUES_JSON`** — the block Step 4 ended with. Whichever way you got
-     there — answering `node onboard.js`, or hand-filling `venues.local.js`
-     and running `node onboard.js --print` — the block to paste is the same:
-     it comes out of `onboard.js` either way.
-   - **`WA_VERIFY_TOKEN`** — any word you invent. Write it down; you type the
-     same word into Meta in Step 6.
+3. Select your fork. Render reads `render.yaml` and configures itself.
+4. When prompted for environment variables, paste in the five values Step 4
+   printed: **`WA_PHONE_ID`**, **`WA_TOKEN`**, **`WABA_ID`**, **`OWNER_PHONE`**,
+   **`VENUE_VPA`**. Also set **`WA_VERIFY_TOKEN`** to any word you invent —
+   write it down, you type the same word into Meta in Step 6.
 5. Choose the **Starter** plan, about ₹600/month.
 
 ## Step 6 — Connect Meta to your server

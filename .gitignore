@@ -10,6 +10,3 @@ baari.json.tmp
 
 node_modules/
 .DS_Store
-
-# Your real venue, hand-written and annotated. Never committed.
-venues.local.js

@@ -5,8 +5,9 @@
 # MUST be the paid starter plan: the free tier sleeps on idle, and a sleeping
 # webhook target drops PhonePe callbacks and delays WhatsApp replies by ~50s.
 #
-# Deploy: push this repo to GitHub -> render.com -> New + -> Blueprint -> pick
-# the repo. Set the secret env vars in the dashboard when prompted.
+# Deploy: fork the repo -> render.com -> New + -> Blueprint -> pick the fork.
+# Set the secret env vars in the dashboard when prompted - `node onboard.js`
+# prints exactly what to paste, after checking the credentials against Meta.
 #
 # The JSON store lives on the persistent disk below; /health is the liveness
 # probe. Back up by downloading /var/data/baari.json.
@@ -29,10 +30,16 @@ services:
         value: /var/data/baari.json
       - key: WA_VERIFY_TOKEN
         sync: false          # any string you choose; type the same one into Meta
-      - key: VENUES_JSON
-        sync: false          # your venue, printed by `node onboard.js`. Holds the
-                             # token, your WhatsApp number and your UPI id, which
-                             # is why it lives here and not in the repo.
+      - key: WA_PHONE_ID
+        sync: false          # Phone number ID, from Meta's API Setup screen
+      - key: WA_TOKEN
+        sync: false          # System User token, expiry Never
+      - key: WABA_ID
+        sync: false          # WhatsApp Business Account ID
+      - key: OWNER_PHONE
+        sync: false          # your own WhatsApp, digits + country code, no +
+      - key: VENUE_VPA
+        sync: false          # your existing UPI id - do not create a new one
       - key: SARVAM_KEY
         sync: false          # api.sarvam.ai - one key for both the Hindi LLM
                              # fallback and reading payment screenshots

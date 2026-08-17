@@ -6,15 +6,14 @@
    This does the checkable parts itself and asks only what a human must answer.
 
      node onboard.js            interactive
-     node onboard.js --check    verify every venue already in venues.js
+     node onboard.js --check    verify the credentials already in venues.js
 
    It never guesses. Anything it cannot verify against the live API, it says so
-   and stops - a venue that half-works is worse than one that is not added yet.
+   and stops - a venue that half-works is worse than one that is not set up yet.
 
    Order matters: credentials are proved BEFORE you spend the owner's time on
    prices and hours, so a bad token fails in minute one, not minute twenty. */
 
-const fs = require('node:fs');
 const readline = require('node:readline');
 
 const API = 'https://graph.facebook.com/v21.0';
@@ -110,50 +109,6 @@ async function sendTest(waPhoneId, waToken, to, venueName) {
   return false;
 }
 
-// ------------------------------------------------------------------ venues.js
-
-/* Unused by the interactive flow, which prints VENUES_JSON instead so that no
-   phone number or token ever lands in a file someone might commit. Kept for
-   anyone who deliberately wants a local venues.js while developing. */
-function writeVenue(v) {
-  const file = 'venues.js';
-  const src = fs.readFileSync(file, 'utf8');
-  if (src.includes(`code: '${v.code}'`)) {
-    bad(`venue ${v.code} already exists in venues.js - edit it by hand instead`);
-    return false;
-  }
-  const block = `  {
-    code: '${v.code}',
-    waPhoneId: '${v.waPhoneId}',
-    // NEVER commit a token. Set WA_TOKEN_${v.code} (or WA_TOKEN) in your host's
-    // environment - this file is meant to be safe to push to a public repo.
-    waToken: process.env.WA_TOKEN_${v.code} || process.env.WA_TOKEN || '',
-    name: '${v.name}',
-    nameEn: '${v.nameEn}',
-    ownerPhone: '${v.ownerPhone}',
-    vpa: '${v.vpa}',
-    payeeName: '${v.payeeName}',
-    ai: true,
-    open: ${v.open}, close: ${v.close},
-    off: ${v.off},
-    peakFrom: ${v.peakFrom}, peakTo: ${v.peakTo}, peakMult: ${v.peakMult},
-    depositPct: ${v.depositPct}, depositMin: ${v.depositMin}, depositMax: ${v.depositMax},
-    grounds: [
-${v.grounds.map(x => `      { id: '${x.id}', hi: '${x.hi}' }`).join(',\n')}
-    ],
-    services: [
-${v.services.map(s => `      { id: '${s.id}', hi: '${s.hi}', price: ${s.price}, mins: ${s.mins} }`).join(',\n')}
-    ]
-  }`;
-  // insert before the closing "];"
-  const i = src.lastIndexOf('];');
-  const before = src.slice(0, i).replace(/\s*$/, '');
-  const sep = before.trimEnd().endsWith('}') ? ',\n' : '\n';
-  fs.writeFileSync(file, before + sep + block + '\n];\n');
-  ok(`venues.js updated with ${v.code}`);
-  return true;
-}
-
 // ------------------------------------------------------------------ flows
 
 async function checkAll() {
@@ -171,7 +126,7 @@ async function checkAll() {
 }
 
 async function interactive() {
-  console.log(b('\nSet up a venue\n'));
+  console.log(b('\nSet up your venue\n'));
   console.log('Credentials first: if these are wrong, nothing else matters.\n');
 
   const waPhoneId = await ask('Phone number ID (digits, from API Setup): ');
@@ -185,7 +140,6 @@ async function interactive() {
   console.log(b('\nNow the business. Ask the owner; do not guess.\n'));
   const nameEn = await ask('Venue name (English): ');
   const name   = await askDefault('Venue name (Hindi, shown to customers)', nameEn);
-  const code   = (await askDefault('Short code (A-Z, internal)', nameEn.replace(/[^A-Za-z]/g, '').slice(0, 8).toUpperCase())).toUpperCase();
   const ownerPhone = await ask('Owner WhatsApp (digits + country code, e.g. 919XXXXXXXXX): ');
   const vpa    = await ask('Their UPI id ("आपकी UPI ID क्या है?"): ');
   const payeeName = await askDefault('Name shown in the UPI app', nameEn);
@@ -223,60 +177,54 @@ async function interactive() {
   }
   if (!services.length) { bad('no services - cannot onboard'); rl.close(); return; }
 
-  const v = { code, waPhoneId, waToken, name, nameEn, ownerPhone, vpa, payeeName,
-    open, close, off, peakFrom, peakTo, peakMult, depositPct, depositMin, depositMax,
-    grounds, services };
-
   console.log();
 
   const yn = await askDefault('Send a live test message to the owner now? (y/n)', 'y');
   if (yn.toLowerCase().startsWith('y')) await sendTest(waPhoneId, waToken, ownerPhone, name);
 
-  /* Printed, never written to disk. venues.js stays a sample that is safe to
-     commit, and the owner's phone number and UPI id never enter the repo. */
+  /* Two blocks, printed - never written to a file. The first five values are
+     private and belong in Render's environment. Everything after is exactly
+     what venues.js already asks you to edit directly, so it goes straight into
+     the committed file where the Hindi wording and rates are meant to live. */
   console.log(b('\n' + '='.repeat(64)));
-  console.log(b('Copy everything between the lines into Render -> Environment'));
-  console.log(b('as a variable called  VENUES_JSON'));
+  console.log(b('1. Paste these into Render -> Environment (or your shell):'));
   console.log(b('='.repeat(64)));
-  console.log(JSON.stringify([v]));
-  console.log(b('='.repeat(64)));
-  console.log(y('\nThis contains your token, your WhatsApp number and your UPI id.'));
-  console.log(y('Do not paste it into a file, a chat, or a commit.\n'));
+  console.log(`WA_PHONE_ID=${waPhoneId}`);
+  console.log(`WA_TOKEN=${waToken}`);
+  console.log(`WABA_ID=${wabaId}`);
+  console.log(`OWNER_PHONE=${ownerPhone}`);
+  console.log(`VENUE_VPA=${vpa}`);
+  console.log(y('\nThis is your token, your WhatsApp number and your UPI id.'));
+  console.log(y('Do not paste it into venues.js, a chat, or a commit.'));
 
-  console.log(b('Then:'));
-  console.log('  1. Render redeploys by itself once you save the variable.');
-  console.log('  2. Reply "आज" to the test message - confirms inbound works.');
-  console.log('  3. Payments: forward your bank\'s payment message to your own bot.');
-  console.log('     See PAYMENTS.md to automate it.\n');
+  console.log(b('\n' + '='.repeat(64)));
+  console.log(b('2. Edit venues.js with these - safe to commit, nothing private here:'));
+  console.log(b('='.repeat(64)));
+  console.log(`    name: '${name}',`);
+  console.log(`    nameEn: '${nameEn}',`);
+  console.log(`    payeeName: '${payeeName}',`);
+  console.log(`    open: ${open}, close: ${close},`);
+  console.log(`    off: ${off},`);
+  console.log(`    peakFrom: ${peakFrom}, peakTo: ${peakTo}, peakMult: ${peakMult},`);
+  console.log(`    depositPct: ${depositPct}, depositMin: ${depositMin}, depositMax: ${depositMax},`);
+  console.log('    grounds: [');
+  console.log(grounds.map(x => `      { id: '${x.id}', hi: '${x.hi}' }`).join(',\n'));
+  console.log('    ],');
+  console.log('    services: [');
+  console.log(services.map(x => `      { id: '${x.id}', hi: '${x.hi}', price: ${x.price}, mins: ${x.mins} }`).join(',\n'));
+  console.log('    ]');
+
+  console.log(b('\n' + '='.repeat(64)));
+  console.log('Then:');
+  console.log('  1. Commit venues.js (fork it on GitHub and edit there, or edit locally).');
+  console.log('  2. Set the five values above in Render -> Environment. It redeploys itself.');
+  console.log('  3. Reply "आज" to the test message - confirms inbound works.');
+  console.log('  4. Payments: forward your bank\'s payment message to your own bot.');
+  console.log('     See the README to automate it.\n');
   rl.close();
 }
 
-/* For anyone who would rather write their venue by hand than answer twenty
-   questions: fill in venues.local.js, then run this to get the same JSON the
-   interview would have printed. The file is gitignored, so this is the only way
-   its contents reach the server. */
-function printJson() {
-  const VENUES = require('./venues');
-  console.log(b('\n' + '='.repeat(64)));
-  console.log(b('Copy everything between the lines into Render -> Environment'));
-  console.log(b('as a variable called  VENUES_JSON'));
-  console.log(b('='.repeat(64)));
-  console.log(JSON.stringify(VENUES));
-  console.log(b('='.repeat(64)));
-  const missing = VENUES.filter(v => !v.waToken || !v.waPhoneId);
-  if (missing.length) {
-    bad('these venues have no token or phone id: ' + missing.map(v => v.code).join(', '));
-    console.log('       They will not be able to send anything.');
-  }
-  console.log(y('\nThis contains your token, your WhatsApp number and your UPI id.'));
-  console.log(y('Do not paste it into a file, a chat, or a commit.\n'));
-  rl.close();
-  return Promise.resolve();
-}
-
-const mode = process.argv.includes('--check') ? checkAll
-  : process.argv.includes('--print') ? printJson
-  : interactive;
+const mode = process.argv.includes('--check') ? checkAll : interactive;
 
 (mode()).catch(e => {
   console.error(r('error: ') + e.message); rl.close(); process.exit(1);
