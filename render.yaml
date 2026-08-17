@@ -28,7 +28,11 @@ services:
       - key: DB_PATH
         value: /var/data/baari.json
       - key: WA_VERIFY_TOKEN
-        sync: false          # set in dashboard: any string you choose
+        sync: false          # any string you choose; type the same one into Meta
+      - key: VENUES_JSON
+        sync: false          # your venue, printed by `node onboard.js`. Holds the
+                             # token, your WhatsApp number and your UPI id, which
+                             # is why it lives here and not in the repo.
       - key: SARVAM_KEY
         sync: false          # api.sarvam.ai - one key for both the Hindi LLM
                              # fallback and reading payment screenshots

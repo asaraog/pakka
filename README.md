@@ -42,7 +42,7 @@ no keys.
 Meta will only deliver messages to a public address with a valid HTTPS
 certificate. Your laptop does not qualify.
 
-1. Push your copy of this repository to your own GitHub account.
+1. **Fork** this repository to your own GitHub account (one button, top right).
 2. Go to [render.com](https://render.com), sign up, and choose
    **New → Blueprint**.
 3. Select your repository. Render reads `render.yaml` and configures itself.
@@ -96,13 +96,11 @@ Now copy two values from the API Setup page and paste them somewhere:
 10. Generate, then **copy the token immediately**. It is shown once and never
     again. If you lose it, generate another. It starts with `EAA`.
 
-Now put it where the server can read it: in Render, open your service →
-**Environment** → add **`WA_TOKEN`** with the token as its value. Do the same for
-**`WA_PHONE_ID`** with the Phone number ID from Step 3.
+Keep it somewhere for a moment — Step 6 puts it in place.
 
-> **Never paste a token into `venues.js`.** That file gets committed, and a fork
-> of a public repo is public. It reads `process.env.WA_TOKEN` for exactly this
-> reason, so the file stays safe to push and the secret stays on your server.
+> **Never paste a token into a file in the repo.** A fork of a public repository
+> is public. Everything private — your token, your WhatsApp number, your UPI id —
+> goes into Render's environment in Step 6, and never into git.
 
 ## Step 5 — Connect Meta to your server
 
@@ -121,13 +119,27 @@ Now put it where the server can read it: in Render, open your service →
 node onboard.js
 ```
 
-It asks about your hours, what is bookable, your sports and rates, and how much
-advance you take. It also asks for your existing business WhatsApp number and existing UPI ID.
+It checks your token and phone number first, so a wrong value fails in the first
+thirty seconds rather than after twenty questions. Then it asks about your hours,
+what is bookable, your sports and rates, and how much advance you take.
 
-Write the Hindi the way your customers actually say it, not the way it is written
-formally. If they say `बॉक्स क्रिकेट`, put that.
+Two answers decide whether any of this works:
 
-You can also edit `venues.js` by hand. Commit and push.
+- **Your own WhatsApp number**, with country code and no `+`. Any message from
+  this number is treated as *you*, the owner. One wrong digit and you will
+  receive your customers' replies while they receive nothing.
+- **Your existing UPI id**, like `yourturf@okhdfcbank`. Do not create a new one.
+  Customers pay this directly and the money never passes through this software.
+
+Write the Hindi the way your customers actually say it. If they say
+`बॉक्स क्रिकेट`, put that.
+
+At the end it prints a block of JSON. In Render: your service → **Environment** →
+add **`VENUES_JSON`** and paste it in. Render redeploys by itself.
+
+> That JSON holds your token, your phone number and your UPI id. It goes in the
+> environment variable and nowhere else — not in `venues.js`, not in a commit.
+> `venues.js` in the repo is only a sample, used when `VENUES_JSON` is unset.
 
 ## Step 7 — Prove it works
 

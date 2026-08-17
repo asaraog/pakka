@@ -1,14 +1,46 @@
-/* Your venue, described by hand. One object per venue if you run more than one.
+/* Your venue.
 
-   Two things come from Meta (README steps 2 and 3):
-     waPhoneId - the Phone number ID for your bot's number
-     waToken   - a permanent System User token scoped to your WABA
+   THE WHOLE FILE IS A FALLBACK. In production your venue comes from the
+   VENUES_JSON environment variable, and nothing below is used.
+
+   That split is deliberate. Everything describing a venue is either private or
+   identifying - the owner's personal WhatsApp number, their UPI id - and a fork
+   of a public repo is public. Keeping it in an environment variable means the
+   repo holds code only, so anyone can fork this without publishing their phone
+   number by accident.
+
+     VENUES_JSON   the whole array, as JSON. `node onboard.js` prints it ready
+                   to paste into Render -> Environment.
+
+   With VENUES_JSON unset you get the sample below, which is enough to run the
+   tests and see the bot answer. It cannot send anything: there is no token in
+   it, and there must never be one.
 
    Inbound messages are routed by waPhoneId, which Meta puts in every webhook,
-   so `code` is only used for the optional wa.me deep link.
+   so `code` is only used for the optional wa.me deep link. */
 
-   Keep real tokens out of git. Every field here can come from an environment
-   variable instead, which is what the process.env defaults below are for. */
+/* A bad paste should stop the server, loudly, at boot. Falling back to the
+   sample would leave a venue silently answering with someone else's prices. */
+if (process.env.VENUES_JSON) {
+  let parsed;
+  try {
+    parsed = JSON.parse(process.env.VENUES_JSON);
+  } catch (e) {
+    console.error('VENUES_JSON is not valid JSON: ' + e.message);
+    console.error('Re-run `node onboard.js` and paste its output exactly.');
+    process.exit(1);
+  }
+  if (!Array.isArray(parsed) || !parsed.length) {
+    console.error('VENUES_JSON must be a non-empty array of venues.');
+    process.exit(1);
+  }
+  const bad = parsed.find(v => !v.waPhoneId || !v.waToken || !v.ownerPhone || !v.vpa);
+  if (bad) {
+    console.error('venue "' + (bad.code || '?') + '" is missing one of: waPhoneId, waToken, ownerPhone, vpa');
+    process.exit(1);
+  }
+  module.exports = parsed;
+} else {
 
 module.exports = [
   {
@@ -66,3 +98,5 @@ module.exports = [
     ]
   }
 ];
+
+}

@@ -112,6 +112,9 @@ async function sendTest(waPhoneId, waToken, to, venueName) {
 
 // ------------------------------------------------------------------ venues.js
 
+/* Unused by the interactive flow, which prints VENUES_JSON instead so that no
+   phone number or token ever lands in a file someone might commit. Kept for
+   anyone who deliberately wants a local venues.js while developing. */
 function writeVenue(v) {
   const file = 'venues.js';
   const src = fs.readFileSync(file, 'utf8');
@@ -225,23 +228,26 @@ async function interactive() {
     grounds, services };
 
   console.log();
-  if (!writeVenue(v)) { rl.close(); return; }
 
-  const yn = await askDefault('\nSend a live test message to the owner now? (y/n)', 'y');
+  const yn = await askDefault('Send a live test message to the owner now? (y/n)', 'y');
   if (yn.toLowerCase().startsWith('y')) await sendTest(waPhoneId, waToken, ownerPhone, name);
 
-  console.log(b('\nSet this in your host\'s environment (Render -> Environment):'));
-  console.log(`  WA_TOKEN_${code} = ${waToken}`);
-  console.log(y('  The token is deliberately NOT written into venues.js, so that file'));
-  console.log(y('  stays safe to commit. Nothing will send until this is set.\n'));
+  /* Printed, never written to disk. venues.js stays a sample that is safe to
+     commit, and the owner's phone number and UPI id never enter the repo. */
+  console.log(b('\n' + '='.repeat(64)));
+  console.log(b('Copy everything between the lines into Render -> Environment'));
+  console.log(b('as a variable called  VENUES_JSON'));
+  console.log(b('='.repeat(64)));
+  console.log(JSON.stringify([v]));
+  console.log(b('='.repeat(64)));
+  console.log(y('\nThis contains your token, your WhatsApp number and your UPI id.'));
+  console.log(y('Do not paste it into a file, a chat, or a commit.\n'));
 
-  console.log(b('Left to do, with them, before you leave:'));
-  console.log(`  1. git add venues.js && git commit -m "onboard ${code}" && git push   (deploys)`);
-  console.log('  2. Owner replies "आज" to the test message - confirms inbound works.');
-  console.log('  3. Payment confirmation: start on Tier 0 - "पेमेंट का मैसेज आए तो बॉट को');
-  console.log('     फॉरवर्ड कर दो". Show them once. Upgrade to MacroDroid later.');
-  console.log('  4. Take their last 3 payment SMS and paste into test-notify.js CREDITS,');
-  console.log('     then run it - proves the parser handles THEIR bank.\n');
+  console.log(b('Then:'));
+  console.log('  1. Render redeploys by itself once you save the variable.');
+  console.log('  2. Reply "आज" to the test message - confirms inbound works.');
+  console.log('  3. Payments: forward your bank\'s payment message to your own bot.');
+  console.log('     See PAYMENTS.md to automate it.\n');
   rl.close();
 }
 
