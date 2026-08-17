@@ -216,4 +216,8 @@ normal use Meta bills you nothing at all.
 
 ---
 
-BSD 3-Clause. See [LICENSE](LICENSE).
+BSD 3-Clause. See [LICENSE](LICENSE). Use it for whatever you like, including
+commercially.
+
+Built on Pakka by Apoorv Saraogee. If you run this as a service, a credit and a
+link back are appreciated.
