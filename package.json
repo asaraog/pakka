@@ -6,7 +6,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node test.js && node test-notify.js && node test-psp.js && node test-receipt.js && node test-relay.js && node test-sarvam.js"
+    "test": "node test.js && node test-notify.js && node test-receipt.js && node test-relay.js && node test-sarvam.js"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }

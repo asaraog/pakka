@@ -156,14 +156,29 @@ certificate. Your laptop does not qualify.
 
 ## Getting paid without watching for it
 
-Money always goes straight to your UPI id. The only question is how the bot finds
-out it arrived.
+The advance goes straight to your UPI id — this software is never in the middle
+of it. The only question is how the bot learns the money arrived.
 
-The simplest version needs no setup at all: when your bank or UPI app messages
-you that money came in, **forward that message to your own bot**. It reads the
-amount and reference and confirms the booking.
+**Forward the message.** Your bank or UPI app already texts you when money comes
+in. Forward that message to your own bot on WhatsApp. It reads the amount and
+the reference, matches it against the booking waiting for exactly that sum in
+the last twenty minutes, and confirms it. The customer is told immediately.
 
-[PAYMENTS.md](PAYMENTS.md) covers automating that, so you do not even forward.
+Nothing to install, no account to open, no integration. It works from the first
+day for every merchant, whichever bank or app they use.
+
+Three things it will not do, all deliberate:
+
+- **A customer's screenshot never confirms anything.** A screenshot is the
+  payer's claim about their own payment, and apps exist in India that
+  manufacture them. Only a message from *your* bank settles a booking.
+- **Your own spending is ignored.** Forward a payment you made and nothing
+  happens — the parser reads direction, and Indian bank messages routinely name
+  both sides of a transfer.
+- **Two bookings owing the same amount settle neither.** You are asked instead.
+  A wrongly confirmed booking costs a real slot on a real evening.
+
+If it cannot match a forward, it says so and changes nothing.
 
 ## Saying something in your own words
 

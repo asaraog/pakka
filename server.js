@@ -14,7 +14,6 @@ const NLU = require('./nlu.js');
 const store = require('./store');
 const S = require('./scheduler');
 const wa = require('./wa');
-const psp = require('./psp');
 const receipt = require('./receipt');
 const notify = require('./notify');
 const sarvam = require('./sarvam');
@@ -198,19 +197,12 @@ async function handleOwner(venue, from, text, buttonId) {
       all.forEach(x => store.setStatus(x.ref, 'hold'));
       const total = all.reduce((t, x) => t + x.deposit, 0);
 
-      // Wired to a PSP: a per-booking collect link settles into the venue's own
-      // account in seconds and webhooks us back. Nobody confirms anything.
-      const auto = psp.isAuto(venue) ? await psp.collect(venue, b, total) : null;
-      const link = auto || S.upiLink(venue, Object.assign({}, b, { deposit: total }));
+      const link = S.upiLink(venue, Object.assign({}, b, { deposit: total }));
 
-      await wa.sendText(venue, from, auto
-        ? 'पक्का ✅ लिंक भेज दिया। पैसा आते ही अपने आप कन्फर्म हो जाएगा।'
-        : 'पक्का ✅ ग्राहक को भुगतान का लिंक भेज दिया।');
+      await wa.sendText(venue, from, 'पक्का ✅ ग्राहक को भुगतान का लिंक भेज दिया।');
       await wa.sendText(venue, b.customer,
         `मालिक ने हाँ कर दी ✅\nस्लॉट पक्का करने के लिए ₹${total} अग्रिम भेजिए:\n${link}\n\n` +
-        `बुकिंग नं. ${b.ref}` +
-        (auto ? '\nभुगतान होते ही पुष्टि अपने आप आ जाएगी।'
-              : '\nपैसे भेजने के बाद "भेज दिया" लिख दीजिए।'));
+        `बुकिंग नं. ${b.ref}\nपैसे भेजने के बाद "भेज दिया" लिख दीजिए।`);
       return;
     }
     if (act === 'no') {
@@ -375,11 +367,6 @@ async function handleReceipt(venue, from, mediaId) {
 async function customerClaimsPaid(venue, from) {
   const b = store.lastFor(from);
   if (!b || b.status !== 'hold') return wa.sendText(venue, from, 'कोई भुगतान बाकी नहीं दिख रहा।');
-  // On a PSP venue the webhook confirms it. Asking the owner would defeat the point,
-  // and would arrive after the confirmation the customer is about to get anyway.
-  if (psp.isAuto(venue)) {
-    return wa.sendText(venue, from, 'शुक्रिया 🙏 भुगतान मिलते ही पुष्टि अपने आप आ जाएगी।');
-  }
   await wa.sendText(venue, from, 'शुक्रिया 🙏 मालिक से पुष्टि करा रहे हैं।');
   return wa.sendButtons(venue, venue.ownerPhone,
     `💰 ₹${b.deposit} आया क्या?\n${b.name || 'ग्राहक'} · ${dOf(b)} ${tOf(b)}\nअपने UPI ऐप में देख लीजिए।`,
@@ -400,70 +387,6 @@ const server = http.createServer(async (req, res) => {
       .end(JSON.stringify({ ok: true, venues: VENUES.map(v => v.code) }));
     return;
   }
-  /* The merchant's own payment signal - their QR provider's callback, or the
-     listener app on their phone. THE signal that settles a booking, because it
-     comes from the merchant's side and a customer cannot manufacture it.
-
-     Routed by a per-venue token rather than a body field, so a leaked venue code
-     buys nothing. */
-  if (req.method === 'POST' && url.pathname === '/notify') {
-    let raw = '';
-    req.on('data', c => raw += c);
-    req.on('end', async () => {
-      const token = req.headers['x-pakka-token'] || url.searchParams.get('t');
-      const venue = VENUES.find(v => v.notify && v.notify.token && v.notify.token === token);
-      if (!venue) { res.writeHead(401).end(); return; }
-      res.writeHead(200).end();                  // ack fast; providers retry
-      try {
-        const source = url.searchParams.get('source') || venue.notify.source || 'device';
-        let body; try { body = JSON.parse(raw); } catch (e) { body = { text: raw }; }
-        const p = notify.normalise(source, body, venue.notify, req.headers);
-        if (!p) return console.warn('notify: unreadable %s payload', source);
-
-        const m = notify.match(venue, store, p);
-        if (!m.ok) return console.log('notify (%s) ignored: %s', source, m.reason);
-
-        console.log('notify (%s) settles %s: %s', source, m.booking.ref, m.reason);
-        store.siblings(venue.code, m.booking).forEach(x => store.setStatus(x.ref, 'paid'));
-        await settle(venue, m.booking, p.utr);
-      } catch (e) {
-        console.error('notify error', e);
-      }
-    });
-    return;
-  }
-
-  /* PSP payment webhook. This is the whole point: the money has already reached the
-     venue's account, and this tells us so. No owner is asked anything. */
-  if (req.method === 'POST' && url.pathname === '/psp-webhook') {
-    let raw = '';
-    req.on('data', c => raw += c);
-    req.on('end', async () => {
-      res.writeHead(200).end();                  // ack fast; PSPs retry on delay
-      try {
-        // PSP webhooks carry no venue id - route on the booking ref they echo back
-        const venue = psp.venueOfWebhook(VENUES, store, raw);
-        if (!venue) return console.warn('psp webhook: no venue matched');
-        const p = psp.readWebhook(venue, raw, req.headers);
-        if (!p) return;                          // bad signature, or not a success
-        const b = store.byRef(p.ref);
-        if (!b) return console.warn('psp webhook: unknown ref', p.ref);
-
-        // A standing slot is approved as one charge covering several weeks.
-        const group = store.siblings(venue.code, b);
-        const due = b.deposit + group.reduce((t, x) => t + x.deposit, 0);
-        if (p.amount != null && Math.round(p.amount) !== Math.round(due)) {
-          return console.warn('psp amount mismatch on %s: got %s, expected %s', p.ref, p.amount, due);
-        }
-        group.forEach(x => store.setStatus(x.ref, 'paid'));
-        await settle(venue, b, p.utr);
-      } catch (e) {
-        console.error('psp webhook error', e);
-      }
-    });
-    return;
-  }
-
   if (req.method !== 'POST' || url.pathname !== '/webhook') { res.writeHead(404).end(); return; }
 
   let raw = '';

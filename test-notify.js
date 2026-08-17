@@ -11,7 +11,6 @@ process.env.PORT = '3996';
 
 const http = require('node:http');
 const PHONE_ID = '000000000000000';
-const TOKEN = 'tok-test';
 
 const sent = [];
 global.fetch = async (url, opt) => {
@@ -22,7 +21,6 @@ global.fetch = async (url, opt) => {
 };
 
 const VENUES = require('./venues');
-VENUES[0].notify = { token: TOKEN, source: 'device' };
 
 require('./server.js');
 const store = require('./store');
@@ -148,72 +146,6 @@ const DEBITS = [
   ck('bare 12 digits', N.utrOf('txn 412345678901 done') === '412345678901');
   ck('no utr is null', N.utrOf('Rs.500 received') === null);
 
-  console.log('--- provider callback adapters ---');
-  // The documented S2S shape: base64 response, paise, paymentState, utr in paymentModes.
-  const ppBody = { response: Buffer.from(JSON.stringify({
-    success: true, code: 'PAYMENT_SUCCESS', message: 'Your payment is successful.',
-    data: {
-      transactionId: 'T2508121812', merchantId: 'MERCHANTUAT',
-      providerReferenceId: 'P2508121812', amount: 50000,
-      paymentState: 'COMPLETED', payResponseCode: 'SUCCESS',
-      paymentModes: [{ mode: 'ACCOUNT', amount: 50000, utr: '412345678901' }],
-      transactionContext: { qrCodeId: 'QR1', storeId: 'S1', terminalId: 'T1' }
-    }
-  })).toString('base64') };
-  const pp = N.normalise('phonepe', ppBody);
-  ck('phonepe paise -> rupees', pp && pp.amount === 500, JSON.stringify(pp));
-  ck('phonepe reads as credit', pp && pp.direction === 'credit');
-  ck('phonepe utr comes from paymentModes', pp && pp.utr === '412345678901', pp && pp.utr);
-
-  const crypto = require('node:crypto');
-  const salt = 'salt-test';
-  const xv = crypto.createHash('sha256').update(ppBody.response + salt).digest('hex') + '###1';
-  const ppOk = N.normalise('phonepe', ppBody, { saltKey: salt, saltIndex: 1 }, { 'x-verify': xv });
-  ck('phonepe X-VERIFY accepted when correct', ppOk && ppOk.amount === 500);
-  ck('phonepe X-VERIFY rejected when wrong',
-    N.normalise('phonepe', ppBody, { saltKey: salt }, { 'x-verify': 'garbage###1' }) === null);
-  ck('phonepe failed payment is not a credit',
-    N.normalise('phonepe', { response: Buffer.from(JSON.stringify({
-      success: false, code: 'PAYMENT_ERROR',
-      data: { amount: 50000, paymentState: 'FAILED' } })).toString('base64') })
-      .direction !== 'credit');
-
-  const pt = N.normalise('paytm', { STATUS: 'TXN_SUCCESS', TXNAMOUNT: '500.00', BANKTXNID: 'B9' });
-  ck('paytm amount + utr', pt && pt.amount === 500 && pt.utr === 'B9', JSON.stringify(pt));
-  ck('paytm failure is not a credit',
-    N.normalise('paytm', { STATUS: 'TXN_FAILURE', TXNAMOUNT: '500.00' }).direction !== 'credit');
-
-  const gen = N.normalise('generic', { data: { amt: 50000, st: 'COMPLETED', rrn: 'R7' } },
-    { label: 'icici', map: { amount: 'data.amt', paise: true, status: 'data.st',
-                             successWhen: 'COMPLETED', utr: 'data.rrn' } });
-  ck('generic field map works', gen && gen.amount === 500 && gen.utr === 'R7', JSON.stringify(gen));
-  ck('generic wrong status is not a credit',
-    N.normalise('generic', { data: { amt: 50000, st: 'FAILED' } },
-      { map: { amount: 'data.amt', paise: true, status: 'data.st', successWhen: 'COMPLETED' } })
-      .direction !== 'credit');
-
-  console.log('--- end to end ---');
-  const C1 = '919999900031';
-  await msg(C1, 'कल 8 बजे बॉक्स क्रिकेट');
-  await btn(C1, 'ok');
-  const b1 = store.pending('CHAMPION')[0];
-  await btn(OWNER, 'ok:' + b1.ref);
-  ck('on hold', store.byRef(b1.ref).status === 'hold');
-
-  await send('/notify', { text: 'You received ₹500 from Rahul Kumar' }, { 'x-pakka-token': 'wrong' });
-  ck('bad token settles nothing', store.byRef(b1.ref).status === 'hold');
-
-  await send('/notify', { text: 'You paid ₹500 to Champion Arena' }, { 'x-pakka-token': TOKEN });
-  ck('a debit settles nothing', store.byRef(b1.ref).status === 'hold');
-
-  await send('/notify', { text: 'You received ₹300 from Rahul' }, { 'x-pakka-token': TOKEN });
-  ck('wrong amount settles nothing', store.byRef(b1.ref).status === 'hold');
-
-  await send('/notify', { title: 'PhonePe', text: 'You received ₹500 from Rahul Kumar' },
-    { 'x-pakka-token': TOKEN });
-  ck('the real credit settles it, no human', store.byRef(b1.ref).status === 'paid');
-  ck('customer told', /बुकिंग पक्की/.test(to(C1).text || ''), to(C1).text);
-
   console.log('--- ambiguity refuses to guess ---');
   // Both must be PEAK hours so both owe the same advance - that is the whole
   // point of the test. ("10 बजे" parses to 10am and would owe ₹350.)
@@ -229,7 +161,7 @@ const DEBITS = [
   ck('and both owe the same amount',
     two.length === 2 && two[0].deposit === two[1].deposit,
     two.map(x => x.deposit).join(' vs '));
-  await send('/notify', { text: 'You received ₹500 from someone' }, { 'x-pakka-token': TOKEN });
+  await msg(OWNER, 'You received ₹500 from someone');
   ck('two candidates -> settles neither',
     two.every(x => store.byRef(x.ref).status === 'hold'),
     two.map(x => store.byRef(x.ref).status).join(','));
@@ -268,7 +200,7 @@ const DEBITS = [
   const old = two[0];
   store.byRef(old.ref).held = new Date(Date.now() - 60 * 60000).toISOString();
   store.byRef(two[1].ref).status = 'cancelled';
-  await send('/notify', { text: 'You received ₹500 from someone' }, { 'x-pakka-token': TOKEN });
+  await msg(OWNER, 'You received ₹500 from someone');
   ck('an hour-old hold is not settled by a fresh credit',
     store.byRef(old.ref).status === 'hold', store.byRef(old.ref).status);
 
