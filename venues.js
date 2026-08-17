@@ -15,7 +15,9 @@ module.exports = [
     code: 'CHAMPION',
     waPhoneId: process.env.WA_PHONE_ID || '000000000000000',
     wabaId: process.env.WABA_ID || '',   // used by onboard.js to subscribe our app
-    waToken: process.env.WA_TOKEN || 'EAAG...',   // temp token; rotate to a System User token
+    // NEVER put a real token here. This file is meant to be safe to commit,
+    // even to a public repo. Set WA_TOKEN in your host's environment instead.
+    waToken: process.env.WA_TOKEN || '',
     name: 'चैंपियन स्पोर्ट्स एरिना',
     nameEn: 'Champion Sports Arena',
     ownerPhone: process.env.OWNER_PHONE || '9198XXXXXXXX',   // owner's WhatsApp, digits only with country code

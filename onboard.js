@@ -122,7 +122,9 @@ function writeVenue(v) {
   const block = `  {
     code: '${v.code}',
     waPhoneId: '${v.waPhoneId}',
-    waToken: '${v.waToken}',
+    // NEVER commit a token. Set WA_TOKEN_${v.code} (or WA_TOKEN) in your host's
+    // environment - this file is meant to be safe to push to a public repo.
+    waToken: process.env.WA_TOKEN_${v.code} || process.env.WA_TOKEN || '',
     name: '${v.name}',
     nameEn: '${v.nameEn}',
     ownerPhone: '${v.ownerPhone}',
@@ -228,7 +230,12 @@ async function interactive() {
   const yn = await askDefault('\nSend a live test message to the owner now? (y/n)', 'y');
   if (yn.toLowerCase().startsWith('y')) await sendTest(waPhoneId, waToken, ownerPhone, name);
 
-  console.log(b('\nLeft to do, with them, before you leave:'));
+  console.log(b('\nSet this in your host\'s environment (Render -> Environment):'));
+  console.log(`  WA_TOKEN_${code} = ${waToken}`);
+  console.log(y('  The token is deliberately NOT written into venues.js, so that file'));
+  console.log(y('  stays safe to commit. Nothing will send until this is set.\n'));
+
+  console.log(b('Left to do, with them, before you leave:'));
   console.log(`  1. git add venues.js && git commit -m "onboard ${code}" && git push   (deploys)`);
   console.log('  2. Owner replies "आज" to the test message - confirms inbound works.');
   console.log('  3. Payment confirmation: start on Tier 0 - "पेमेंट का मैसेज आए तो बॉट को');

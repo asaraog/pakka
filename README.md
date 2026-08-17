@@ -96,6 +96,14 @@ Now copy two values from the API Setup page and paste them somewhere:
 10. Generate, then **copy the token immediately**. It is shown once and never
     again. If you lose it, generate another. It starts with `EAA`.
 
+Now put it where the server can read it: in Render, open your service →
+**Environment** → add **`WA_TOKEN`** with the token as its value. Do the same for
+**`WA_PHONE_ID`** with the Phone number ID from Step 3.
+
+> **Never paste a token into `venues.js`.** That file gets committed, and a fork
+> of a public repo is public. It reads `process.env.WA_TOKEN` for exactly this
+> reason, so the file stays safe to push and the secret stays on your server.
+
 ## Step 5 — Connect Meta to your server
 
 1. Back in your Meta app: **WhatsApp → Configuration**.
