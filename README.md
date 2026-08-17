@@ -91,6 +91,10 @@ Keep it somewhere for a moment — Step 5 puts it in place.
 
 ## Step 4 — Describe your venue
 
+Two ways. Both end with a block of JSON you paste into your server in Step 5.
+
+**Answer questions:**
+
 ```bash
 node onboard.js
 ```
@@ -99,28 +103,31 @@ It checks your token and phone number first, so a wrong value fails in the first
 thirty seconds rather than after twenty questions. Then it asks about your hours,
 what is bookable, your sports and rates, and how much advance you take.
 
-Two answers decide whether any of this works:
+**Or fill it in yourself:**
+
+```bash
+cp venues.js venues.local.js     # then edit it
+node onboard.js --print
+```
+
+`venues.local.js` is gitignored and it is JavaScript, so you can comment it
+however you like — useful if you run several grounds or want to remember why a
+rate is what it is. `--print` turns whatever the server would load into the JSON
+for Step 5.
+
+Either way, two answers decide whether this works:
 
 - **Your own WhatsApp number**, with country code and no `+`. Any message from
-  this number is treated as *you*, the owner.
+  this number is treated as *you*, the owner. One wrong digit and you will
+  receive your customers' replies while they receive nothing.
 - **Your existing UPI id**, like `yourturf@okhdfcbank`. Do not create a new one.
-- Customers pay this directly and the money never passes through this software.
+  Customers pay this directly and the money never passes through this software.
 
 Write the Hindi the way your customers actually say it. If they say
 `बॉक्स क्रिकेट`, put that.
 
-At the end it prints a block of JSON. **Keep it** — you paste it into your
-server in the next step, and it is not written to any file.
-
-> That JSON holds your token, your phone number and your UPI id. It belongs in an
-> environment variable and nowhere else — not in `venues.js`, not in a commit,
-> not in a chat. `venues.js` in the repo is only a sample, used when
-> `VENUES_JSON` is unset.
-
-If you would rather keep your venue in a file you can read and annotate, write
-**`venues.local.js`** instead — same shape as the sample in `venues.js`, but it
-is JavaScript so you can comment it freely, and it is gitignored. The server
-prefers `VENUES_JSON`, then `venues.local.js`, then the sample.
+> The JSON holds your token, your phone number and your UPI id. It belongs in an
+> environment variable and nowhere else — not in a committed file, not in a chat.
 
 ## Step 5 — Make a server
 

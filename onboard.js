@@ -251,6 +251,33 @@ async function interactive() {
   rl.close();
 }
 
-(process.argv.includes('--check') ? checkAll() : interactive()).catch(e => {
+/* For anyone who would rather write their venue by hand than answer twenty
+   questions: fill in venues.local.js, then run this to get the same JSON the
+   interview would have printed. The file is gitignored, so this is the only way
+   its contents reach the server. */
+function printJson() {
+  const VENUES = require('./venues');
+  console.log(b('\n' + '='.repeat(64)));
+  console.log(b('Copy everything between the lines into Render -> Environment'));
+  console.log(b('as a variable called  VENUES_JSON'));
+  console.log(b('='.repeat(64)));
+  console.log(JSON.stringify(VENUES));
+  console.log(b('='.repeat(64)));
+  const missing = VENUES.filter(v => !v.waToken || !v.waPhoneId);
+  if (missing.length) {
+    bad('these venues have no token or phone id: ' + missing.map(v => v.code).join(', '));
+    console.log('       They will not be able to send anything.');
+  }
+  console.log(y('\nThis contains your token, your WhatsApp number and your UPI id.'));
+  console.log(y('Do not paste it into a file, a chat, or a commit.\n'));
+  rl.close();
+  return Promise.resolve();
+}
+
+const mode = process.argv.includes('--check') ? checkAll
+  : process.argv.includes('--print') ? printJson
+  : interactive;
+
+(mode()).catch(e => {
   console.error(r('error: ') + e.message); rl.close(); process.exit(1);
 });
