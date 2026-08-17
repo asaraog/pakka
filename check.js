@@ -1,18 +1,23 @@
 #!/usr/bin/env node
-/* Set your venue up in one sitting.
+/* Verify your credentials against Meta before trusting them.
 
-   Tonight's onboarding took six hours because every step was discovered rather
-   than followed, and each Meta failure looked like every other Meta failure.
-   This does the checkable parts itself and asks only what a human must answer.
+   The primary flow now is: edit venues.js yourself - name, hours, grounds,
+   rates are plain fields with nothing private in them - and set the five
+   secret env vars (see venues.js). This checks that what you set actually
+   works, against the live API, before you spend an evening wondering why
+   nothing sends.
 
-     node onboard.js            interactive
-     node onboard.js --check    verify the credentials already in venues.js
+     node check.js               verify the credentials in venues.js
+     node check.js --interview   optional: answer questions instead of hand-
+                                  editing venues.js, and get the values printed
+                                  ready to paste
 
    It never guesses. Anything it cannot verify against the live API, it says so
    and stops - a venue that half-works is worse than one that is not set up yet.
 
-   Order matters: credentials are proved BEFORE you spend the owner's time on
-   prices and hours, so a bad token fails in minute one, not minute twenty. */
+   Tonight's onboarding took six hours because every step was discovered rather
+   than followed, and each Meta failure looked like every other Meta failure -
+   which is why this exists at all. */
 
 const readline = require('node:readline');
 
@@ -224,7 +229,7 @@ async function interactive() {
   rl.close();
 }
 
-const mode = process.argv.includes('--check') ? checkAll : interactive;
+const mode = process.argv.includes('--interview') ? interactive : checkAll;
 
 (mode()).catch(e => {
   console.error(r('error: ') + e.message); rl.close(); process.exit(1);

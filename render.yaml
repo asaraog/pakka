@@ -6,7 +6,7 @@
 # webhook target drops PhonePe callbacks and delays WhatsApp replies by ~50s.
 #
 # Deploy: fork the repo -> render.com -> New + -> Blueprint -> pick the fork.
-# Set the secret env vars in the dashboard when prompted - `node onboard.js`
+# Set the secret env vars in the dashboard when prompted - `node check.js --interview`
 # prints exactly what to paste, after checking the credentials against Meta.
 #
 # The JSON store lives on the persistent disk below; /health is the liveness

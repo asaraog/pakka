@@ -91,33 +91,31 @@ Keep it somewhere for a moment — Step 5 puts it in place.
 
 ## Step 4 — Describe your venue
 
+Open `venues.js` and edit it directly — name, hours, grounds, rates, how much
+advance you take. Nothing in there is private, so it's safe on your fork.
+
+Five fields stay blank in the file on purpose — `waPhoneId`, `waToken`,
+`wabaId`, `ownerPhone`, `vpa` — because those five *are* private. Set them as
+environment variables instead (see the comment at the top of `venues.js` for
+the exact names), locally for now and in Render in Step 5.
+
+Then check they actually work:
+
 ```bash
-node onboard.js
+node check.js
 ```
 
-It checks your token and phone number first, so a wrong value fails in the first
-thirty seconds rather than after twenty questions. Then it asks about your hours,
-what is bookable, your sports and rates, and how much advance you take.
+It fails in seconds if a value is wrong, rather than leaving you to find out
+when nothing sends.
 
-At the end it prints two blocks. **Keep both** — the next two steps use them:
+**Prefer answering questions to hand-editing?**
 
-1. Five values — your token, your phone number, your UPI id — that go into
-   Render, never into a file.
-2. A ready-to-paste chunk of `venues.js` — your name, hours, grounds and rates —
-   with nothing private in it. **Edit `venues.js` with it now**, directly on
-   your fork on GitHub or on your machine, and commit it. This file is meant to
-   be public: it's what makes the setup on your fork match your actual venue.
+```bash
+node check.js --interview
+```
 
-Two of the values decide whether any of this works:
-
-- **Your own WhatsApp number**, with country code and no `+`. Any message from
-  this number is treated as *you*, the owner. One wrong digit and you will
-  receive your customers' replies while they receive nothing.
-- **Your existing UPI id**, like `yourturf@okhdfcbank`. Do not create a new one.
-  Customers pay this directly and the money never passes through this software.
-
-Write the Hindi the way your customers actually say it. If they say
-`बॉक्स क्रिकेट`, put that.
+Same live checks, then asks about your hours and rates and prints everything
+ready to paste — the five env values, and a `venues.js` block for the rest.
 
 ## Step 5 — Make a server
 
