@@ -5,8 +5,7 @@
 # MUST be the paid starter plan: the free tier sleeps on idle, and a sleeping
 # webhook target drops PhonePe callbacks and delays WhatsApp replies by ~50s.
 #
-# Deploy: get your own copy of the repo (private, see README Step 5) ->
-# render.com -> New + -> Blueprint -> pick it.
+# Deploy: fork the repo -> render.com -> New + -> Blueprint -> pick the fork.
 # Set the secret env vars in the dashboard when prompted - `node check.js --interview`
 # prints exactly what to paste, after checking the credentials against Meta.
 #

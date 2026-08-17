@@ -24,38 +24,15 @@ call. I recommend getting a new SIM card.
 **3. Somewhere to run it.** Render costs about ₹600/month and is the path below.
 Any other server that can run Node with a real HTTPS certificate works.
 
-### Get your own copy first
+### Fork it first
 
-Do this before the Meta steps, not after — everything from here on, including
-editing `venues.js`, happens in this copy, and it's the one that actually
-deploys.
-
-**Private, not a fork.** Nothing secret ever lands in the repo, but hours and
-rates in `venues.js` sit there in plain text, and GitHub has no "private fork"
-button — a fork of a public repo is always public. So this makes a private copy
-instead:
+**Fork** this repository to your own GitHub account (one button, top right).
+Do this before the Meta steps — everything from here on, including editing
+`venues.js`, happens in your fork, and it's the one that actually deploys.
 
 ```bash
-git clone --bare https://github.com/asaraog/pakka
-cd pakka.git
-```
-
-Create an empty **private** repository on GitHub (no README, no .gitignore —
-just the empty repo), then:
-
-```bash
-git push --mirror https://github.com/YOUR-USERNAME/pakka.git
-cd .. && rm -rf pakka.git
-git clone https://github.com/YOUR-USERNAME/pakka.git
+git clone https://github.com/YOUR-USERNAME/pakka
 cd pakka
-```
-
-To pull in later updates from the original:
-`git remote add upstream https://github.com/asaraog/pakka && git pull upstream main`.
-
-**Check it runs:**
-
-```bash
 node test.js
 ```
 
@@ -112,14 +89,15 @@ Now copy two values from the API Setup page and paste them somewhere:
 
 Keep it somewhere for a moment — Step 5 puts it in place.
 
-> **Never paste a token into a file in the repo**, even a private one — habits
-> carry across projects. Everything private — your token, your WhatsApp number,
-> your UPI id — goes into Render's environment in Step 5, and never into git.
+> **Never paste a token into a file in the repo.** A fork of a public repository
+> is public. Everything private — your token, your WhatsApp number, your UPI id —
+> goes into Render's environment in Step 5, and never into git.
 
 ## Step 4 — Describe your venue
 
-Open `venues.js`, in the copy from before, and edit it directly — name, hours,
-grounds, rates, how much advance you take. Nothing in there is private.
+Open `venues.js`, in your fork, and edit it directly — name, hours, grounds,
+rates, how much advance you take. Nothing in there is private, so it's safe on
+a public fork.
 
 Five fields stay blank in the file on purpose — `waPhoneId`, `waToken`,
 `wabaId`, `ownerPhone`, `vpa` — because those five *are* private. Set them as
@@ -154,7 +132,7 @@ certificate. Your laptop does not qualify.
 1. Push the edits from Step 4, if you haven't: `git push`.
 2. Go to [render.com](https://render.com), sign up, and choose
    **New → Blueprint**.
-3. Select your private repo. Render reads `render.yaml` and configures itself.
+3. Select your fork. Render reads `render.yaml` and configures itself.
 4. When prompted for environment variables, paste in the five values Step 4
    printed or checked: **`WA_PHONE_ID`**, **`WA_TOKEN`**, **`WABA_ID`**,
    **`OWNER_PHONE`**, **`VENUE_VPA`**. Also set **`WA_VERIFY_TOKEN`** to any
