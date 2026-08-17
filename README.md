@@ -37,21 +37,7 @@ no keys.
 
 ---
 
-## Step 1 — Make a server
-
-Meta will only deliver messages to a public address with a valid HTTPS
-certificate. Your laptop does not qualify.
-
-1. **Fork** this repository to your own GitHub account (one button, top right).
-2. Go to [render.com](https://render.com), sign up, and choose
-   **New → Blueprint**.
-3. Select your repository. Render reads `render.yaml` and configures itself.
-4. When prompted for environment variables, set **`WA_VERIFY_TOKEN`** to any word
-   you invent. Write it down — you type the same word into Meta in Step 5.
-5. Choose the **Starter** plan, about ₹600/month.
-
-
-## Step 2 — Create the Meta app
+## Step 1 — Create the Meta app
 
 1. Go to [developers.facebook.com](https://developers.facebook.com) and log in
    with your Facebook account.
@@ -64,7 +50,7 @@ certificate. Your laptop does not qualify.
 
 Meta will create a test number for you automatically. **Ignore it.** 
 
-## Step 3 — Add your real number
+## Step 2 — Add your real number
 
 1. On that same **API Setup** page, click **Add phone number**.
 2. Fill in a display name (customers *do* see this — use your venue's name), your
@@ -78,7 +64,7 @@ Now copy two values from the API Setup page and paste them somewhere:
 | **Phone number ID** | under the "From" dropdown, after you select your number | `109xxxxxxxxxxx` — about 15 digits |
 | **WhatsApp Business Account ID** | on the same page, often labelled *WABA ID* | another long number |
 
-## Step 4 — Get an access token
+## Step 3 — Get an access token
 
 1. Go to [business.facebook.com](https://business.facebook.com) →
    **Business settings** (gear icon).
@@ -88,7 +74,7 @@ Now copy two values from the API Setup page and paste them somewhere:
 5. Choose **WhatsApp accounts** (not Apps, not Pages) → tick your WhatsApp
    Business Account → turn on **Full control** → **Save changes**.
 6. Click **Generate new token**.
-7. Pick the app you created in Step 2.
+7. Pick the app you created in Step 1.
 8. Set **Token expiration** to **Never**.
 9. Tick exactly these two permissions:
    - `whatsapp_business_messaging`
@@ -96,24 +82,13 @@ Now copy two values from the API Setup page and paste them somewhere:
 10. Generate, then **copy the token immediately**. It is shown once and never
     again. If you lose it, generate another. It starts with `EAA`.
 
-Keep it somewhere for a moment — Step 6 puts it in place.
+Keep it somewhere for a moment — Step 5 puts it in place.
 
 > **Never paste a token into a file in the repo.** A fork of a public repository
 > is public. Everything private — your token, your WhatsApp number, your UPI id —
-> goes into Render's environment in Step 6, and never into git.
+> goes into Render's environment in Step 5, and never into git.
 
-## Step 5 — Connect Meta to your server
-
-1. Back in your Meta app: **WhatsApp → Configuration**.
-2. Next to *Webhook*, click **Edit**.
-3. **Callback URL:** `https://your-app.onrender.com/webhook`
-   (your Render address, with `/webhook` on the end)
-4. **Verify token:** the same word you set as `WA_VERIFY_TOKEN`.
-5. **Verify and save.**
-6. Now click **Manage** next to *Webhook fields* and subscribe to **`messages`**.
-   Only that one. Leave everything else off.
-
-## Step 6 — Describe your venue
+## Step 4 — Describe your venue
 
 ```bash
 node onboard.js
@@ -134,12 +109,40 @@ Two answers decide whether any of this works:
 Write the Hindi the way your customers actually say it. If they say
 `बॉक्स क्रिकेट`, put that.
 
-At the end it prints a block of JSON. In Render: your service → **Environment** →
-add **`VENUES_JSON`** and paste it in. Render redeploys by itself.
+At the end it prints a block of JSON. **Keep it** — you paste it into your
+server in the next step, and it is not written to any file.
 
-> That JSON holds your token, your phone number and your UPI id. It goes in the
-> environment variable and nowhere else — not in `venues.js`, not in a commit.
-> `venues.js` in the repo is only a sample, used when `VENUES_JSON` is unset.
+> That JSON holds your token, your phone number and your UPI id. It belongs in an
+> environment variable and nowhere else — not in `venues.js`, not in a commit,
+> not in a chat. `venues.js` in the repo is only a sample, used when
+> `VENUES_JSON` is unset.
+
+## Step 5 — Make a server
+
+Meta will only deliver messages to a public address with a valid HTTPS
+certificate. Your laptop does not qualify.
+
+1. **Fork** this repository to your own GitHub account (one button, top right).
+2. Go to [render.com](https://render.com), sign up, and choose
+   **New → Blueprint**.
+3. Select your repository. Render reads `render.yaml` and configures itself.
+4. When prompted for environment variables, set both:
+   - **`VENUES_JSON`** — the block `onboard.js` printed in Step 4
+   - **`WA_VERIFY_TOKEN`** — any word you invent. Write it down; you type the
+     same word into Meta in Step 6.
+5. Choose the **Starter** plan, about ₹600/month.
+
+
+## Step 6 — Connect Meta to your server
+
+1. Back in your Meta app: **WhatsApp → Configuration**.
+2. Next to *Webhook*, click **Edit**.
+3. **Callback URL:** `https://your-app.onrender.com/webhook`
+   (your Render address, with `/webhook` on the end)
+4. **Verify token:** the same word you set as `WA_VERIFY_TOKEN`.
+5. **Verify and save.**
+6. Now click **Manage** next to *Webhook fields* and subscribe to **`messages`**.
+   Only that one. Leave everything else off.
 
 ## Step 7 — Prove it works
 
