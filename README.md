@@ -107,15 +107,7 @@ a public fork.
 
 Five fields stay blank in the file on purpose, because those five *are*
 private. Set them as environment variables instead, locally for now and in
-Render in Step 5:
-
-| Field | Env var | What it is |
-|---|---|---|
-| `waPhoneId` | `WA_PHONE_ID` | Meta's ID for your bot's number (Step 2) — not your phone number |
-| `waToken` | `WA_TOKEN` | your permanent access token (Step 3) — whoever has this can send as your bot |
-| `wabaId` | `WABA_ID` | your WhatsApp Business Account ID (Step 2) |
-| `ownerPhone` | `OWNER_PHONE` | your own WhatsApp, digits + country code, no `+` — anything from this number is treated as you, the owner |
-| `vpa` | `VENUE_VPA` | your existing UPI id — customer advances land here directly |
+Render in Step 5 (the table there names each one).
 
 Then check they actually work:
 
@@ -147,9 +139,18 @@ certificate. Your laptop does not qualify.
    **New → Blueprint**.
 3. Select your fork. Render reads `render.yaml` and configures itself.
 4. When prompted for environment variables, paste in the five values Step 4
-   printed or checked: **`WA_PHONE_ID`**, **`WA_TOKEN`**, **`WABA_ID`**,
-   **`OWNER_PHONE`**, **`VENUE_VPA`**. Also set **`WA_VERIFY_TOKEN`** to any
-   word you invent — write it down, you type the same word into Meta in Step 6.
+   printed or checked:
+
+   | Env var | What it is |
+   |---|---|
+   | `WA_PHONE_ID` | Meta's ID for your bot's number (Step 2) — not your phone number |
+   | `WA_TOKEN` | your permanent access token (Step 3) — whoever has this can send as your bot |
+   | `WABA_ID` | your WhatsApp Business Account ID (Step 2) |
+   | `OWNER_PHONE` | your own WhatsApp, digits + country code, no `+` — anything from this number is treated as you, the owner |
+   | `VENUE_VPA` | your existing UPI id — customer advances land here directly |
+
+   Also set **`WA_VERIFY_TOKEN`** to any word you invent — write it down, you
+   type the same word into Meta in Step 6.
 5. Choose the **Starter** plan, about ₹600/month.
 
 ## Step 6 — Connect Meta to your server
@@ -186,16 +187,10 @@ the last twenty minutes, and confirms it. The customer is told immediately.
 Nothing to install, no account to open, no integration. It works from the first
 day for every merchant, whichever bank or app they use.
 
-Three things it will not do, all deliberate:
-
-- **A customer's screenshot never confirms anything.** A screenshot is the
-  payer's claim about their own payment, and apps exist in India that
-  manufacture them. Only a message from *your* bank settles a booking.
-- **Your own spending is ignored.** Forward a payment you made and nothing
-  happens — the parser reads direction, and Indian bank messages routinely name
-  both sides of a transfer.
-- **Two bookings owing the same amount settle neither.** You are asked instead.
-  A wrongly confirmed booking costs a real slot on a real evening.
+One thing it will not do, deliberately: **a customer's screenshot never
+confirms anything.** A screenshot is the payer's claim about their own
+payment, and apps exist in India that manufacture them. Only a message from
+*your* bank settles a booking.
 
 If it cannot match a forward, it says so and changes nothing.
 
