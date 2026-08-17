@@ -99,10 +99,17 @@ Open `venues.js`, in your fork, and edit it directly — name, hours, grounds,
 rates, how much advance you take. Nothing in there is private, so it's safe on
 a public fork.
 
-Five fields stay blank in the file on purpose — `waPhoneId`, `waToken`,
-`wabaId`, `ownerPhone`, `vpa` — because those five *are* private. Set them as
-environment variables instead (see the comment at the top of `venues.js` for
-the exact names), locally for now and in Render in Step 5.
+Five fields stay blank in the file on purpose, because those five *are*
+private. Set them as environment variables instead, locally for now and in
+Render in Step 5:
+
+| Field | Env var | What it is |
+|---|---|---|
+| `waPhoneId` | `WA_PHONE_ID` | Meta's ID for your bot's number (Step 2) — not your phone number |
+| `waToken` | `WA_TOKEN` | your permanent access token (Step 3) — whoever has this can send as your bot |
+| `wabaId` | `WABA_ID` | your WhatsApp Business Account ID (Step 2) |
+| `ownerPhone` | `OWNER_PHONE` | your own WhatsApp, digits + country code, no `+` — anything from this number is treated as you, the owner |
+| `vpa` | `VENUE_VPA` | your existing UPI id — customer advances land here directly |
 
 Then check they actually work:
 
