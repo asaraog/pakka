@@ -1,7 +1,16 @@
 # Pakka
 
 Customers book on WhatsApp, in Hindi. You approve 'Yes' with one tap. The
-advance goes to **your own UPI id** — this software records but never touches your money.
+advance goes to **your own UPI id** — this software records but never touches
+your money.
+
+When your bank texts you that the money arrived, forward that message to your
+own bot and the booking confirms itself. Nothing is installed, nothing is
+migrated, and you stay the one who says yes. What you get back is every booking,
+every advance and every UTR in one place, instead of a diary on one side and a
+bank statement on the other.
+
+# आपका हिसाब अपने आप
 
 ---
 
