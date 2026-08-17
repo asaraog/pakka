@@ -73,6 +73,20 @@ module.exports = [
          - a success webhook pointed at PSP_WEBHOOK_URL
        Without the first you have traded the owner's tap for a day's delay, which
        is a worse product. Check it before onboarding, not after. */
+    // PhonePe PG - the one to use. UPI is 0% here against Razorpay's 2%, and
+    // this adapter was written against developer.phonepe.com (Aug 2026).
+    // webhookUser/webhookPass are credentials YOU invent and type into their
+    // dashboard; there is nothing to look up. See PAYMENTS.md.
+    // psp: {
+    //   vendor: 'phonepe',
+    //   clientId: '...', clientSecret: '...', clientVersion: 1,
+    //   env: 'sandbox',                // omit or 'production' when live
+    //   webhookUser: '...', webhookPass: '...'
+    // },
+    //
+    // Cashfree and Paytm adapters also exist, but were written from published
+    // shapes rather than verified against a live account. Check them against
+    // the vendor's current docs before taking real money:
     // psp: {
     //   vendor: 'cashfree',            // or 'paytm'
     //   appId: '...',
