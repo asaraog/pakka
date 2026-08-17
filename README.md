@@ -139,7 +139,10 @@ certificate. Your laptop does not qualify.
    **New → Blueprint**.
 3. Select your repository. Render reads `render.yaml` and configures itself.
 4. When prompted for environment variables, set both:
-   - **`VENUES_JSON`** — the block `onboard.js` printed in Step 4
+   - **`VENUES_JSON`** — the block Step 4 ended with. Whichever way you got
+     there — answering `node onboard.js`, or hand-filling `venues.local.js`
+     and running `node onboard.js --print` — the block to paste is the same:
+     it comes out of `onboard.js` either way.
    - **`WA_VERIFY_TOKEN`** — any word you invent. Write it down; you type the
      same word into Meta in Step 6.
 5. Choose the **Starter** plan, about ₹600/month.
