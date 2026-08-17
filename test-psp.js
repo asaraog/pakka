@@ -218,6 +218,48 @@ const ck = (name, cond, extra) => { n++; if (cond) { p++; console.log('PASS ' + 
   ck('phonepe sends O-Bearer', hdr1.Authorization === 'O-Bearer TKN', hdr1.Authorization);
   ck('token is cached, not refetched every payment', authCalls === 1, 'auth calls ' + authCalls);
 
+  /* Paytm's checksum, which is AES-128-CBC over a salted SHA256 rather than an
+     HMAC. The salt is random, so the only meaningful test is a round-trip plus
+     the ways it must refuse. */
+  console.log('--- paytm checksum ---');
+  const PT = require('./psp').VENDORS.paytm;
+  const KEY = 'aaaaaaaaaaaaaaaa';              // Paytm merchant keys are 16 chars
+  const pcfg2 = { vendor: 'paytm', mid: 'MID123', merchantKey: KEY, env: 'sandbox' };
+
+  // round-trip through the real adapter: build a body, then verify it
+  const built = PT.createBody({ code: 'X' }, { ref: 'REF1', customer: '919999900011' }, 500, pcfg2);
+  ck('paytm signs the request', typeof built.head.signature === 'string' && built.head.signature.length > 20);
+  ck('paytm sends requestType Payment', built.body.requestType === 'Payment');
+  ck('paytm amount is a 2dp string', built.body.txnAmount.value === '500.00', built.body.txnAmount.value);
+  ck('paytm websiteName is WEBSTAGING on sandbox', built.body.websiteName === 'WEBSTAGING', built.body.websiteName);
+
+  const asCallback = JSON.stringify({ head: { signature: built.head.signature }, body: built.body });
+  ck('paytm verifies its own signature', PT.verify(asCallback, {}, null, pcfg2) === true);
+  ck('paytm rejects a wrong key',
+    PT.verify(asCallback, {}, null, { merchantKey: 'bbbbbbbbbbbbbbbb' }) === false);
+
+  const tampered = JSON.parse(asCallback); tampered.body.orderId = 'REF2';
+  ck('paytm rejects a tampered body', PT.verify(JSON.stringify(tampered), {}, null, pcfg2) === false);
+  ck('paytm rejects a missing signature',
+    PT.verify(JSON.stringify({ body: built.body }), {}, null, pcfg2) === false);
+  ck('paytm rejects junk', PT.verify('not json', {}, null, pcfg2) === false);
+
+  const okHook2 = { body: { orderId: 'REF1', txnAmount: '500.00', bankTxnId: 'BANK9',
+                            resultInfo: { resultStatus: 'S' } } };
+  const h2 = PT.readHook(okHook2);
+  ck('paytm reads the ref', h2.ref === 'REF1');
+  ck('paytm reads the amount', h2.amount === 500, String(h2.amount));
+  ck('paytm success is ok', h2.ok === true);
+  ck('paytm keeps the bank reference', h2.utr === 'BANK9');
+  const fail2 = JSON.parse(JSON.stringify(okHook2)); fail2.body.resultInfo.resultStatus = 'F';
+  ck('paytm failure is not ok', PT.readHook(fail2).ok === false);
+
+  ck('paytm production host', PT.base({}) === 'https://secure.paytmpayments.com', PT.base({}));
+  ck('paytm sandbox host', PT.base({ env: 'sandbox' }) === 'https://securestage.paytmpayments.com');
+  ck('paytm puts mid and orderId in the query string',
+    PT.pathFor(pcfg2, { ref: 'REF1' }) === '/theia/api/v1/initiateTransaction?mid=MID123&orderId=REF1',
+    PT.pathFor(pcfg2, { ref: 'REF1' }));
+
   console.log('\n' + p + '/' + n + ' passed');
   process.exit(p === n ? 0 : 1);
 })();

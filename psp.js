@@ -17,9 +17,13 @@
    Nothing below is vendor-locked. `VENDORS` holds the parts that differ; everything
    else - reference round-tripping, idempotency, the booking state change - is common.
 
-   !! Cashfree and Paytm below are written from documented shapes and MUST be checked
-   !! against live docs before going live. PhonePe was read off developer.phonepe.com
-   !! on 14 Aug 2026 and its literals are quoted in the comments there. */
+   !! Verification status, per vendor:
+   !!   phonepe   contract read off developer.phonepe.com, 14 Aug 2026
+   !!   paytm     contract read off paytmpayments.com, checksum from Paytm's own
+   !!             reference implementation, 17 Aug 2026
+   !!   cashfree  written from published shapes, NOT checked against live docs
+   !! None has been proven against a real callback. Doc-verified means the shapes
+   !! are right; only a live payment proves the integration. */
 
 const crypto = require('node:crypto');
 
@@ -58,6 +62,45 @@ async function phonepeToken(c) {
   if (!j.access_token) throw new Error('phonepe auth returned no access_token');
   tokens.set(c.clientId, { token: j.access_token, expiresAt: Number(j.expires_at) || 0 });
   return j.access_token;
+}
+
+// ---------------------------------------------------------------- paytm checksum
+
+/* Paytm does NOT use a plain HMAC. Their scheme, from Paytm's own reference
+   implementations (github.com/paytm/Paytm_PHP_Checksum, read 17 Aug 2026):
+
+     sign(s, key)   salt = 4 random chars
+                    hash = sha256(s + "|" + salt)
+                    out  = base64(AES-128-CBC(hash + salt, key, IV))
+
+     verify         decrypt, take the last 4 chars as the salt, recompute,
+                    compare the whole string
+
+   The IV is a fixed, published constant - it is not a secret and not a mistake
+   on our side. For the JSON APIs the signed string is JSON.stringify(body), so
+   the body must be serialised ONCE and both signed and sent, or the signature
+   will not match a re-serialised object. */
+const PAYTM_IV = '@@@@&&&&####$$$$';
+const SALT_CHARS = '9876543210ZYXWVUTSRQPONMLKJIHGFEDCBAabcdefghijklmnopqrstuvwxyz';
+
+function paytmSign(str, key) {
+  let salt = '';
+  for (const byte of crypto.randomBytes(4)) salt += SALT_CHARS[byte % SALT_CHARS.length];
+  const hash = crypto.createHash('sha256').update(str + '|' + salt).digest('hex');
+  const c = crypto.createCipheriv('aes-128-cbc', key, PAYTM_IV);
+  return Buffer.concat([c.update(hash + salt, 'utf8'), c.final()]).toString('base64');
+}
+
+function paytmVerify(str, key, checksum) {
+  try {
+    const d = crypto.createDecipheriv('aes-128-cbc', key, PAYTM_IV);
+    const plain = Buffer.concat([d.update(Buffer.from(checksum, 'base64')), d.final()]).toString('utf8');
+    const salt = plain.slice(-4);
+    const want = crypto.createHash('sha256').update(str + '|' + salt).digest('hex') + salt;
+    return safeEq(plain, want);
+  } catch (e) {
+    return false;                 // wrong key or tampered payload both land here
+  }
 }
 
 // ---------------------------------------------------------------- vendors
@@ -171,35 +214,55 @@ const VENDORS = {
     })
   },
 
-  /* Paytm - real-time settlement, documented webhook callbacks. */
+  /* Paytm PG. Contract read off paytmpayments.com, 17 Aug 2026.
+
+     Three things were wrong before and are worth naming, because each fails in a
+     different way: the host had moved from securegw.paytm.in to
+     secure.paytmpayments.com; mid and orderId belong in the QUERY STRING as well
+     as the body; and there was no `head.signature` at all, which Paytm rejects
+     outright. The old plain-HMAC verify would also have refused every genuine
+     callback. Still unproven against a live account - see the header. */
   paytm: {
-    base: 'https://securegw.paytm.in',
+    base: c => c.env === 'sandbox'
+      ? 'https://securestage.paytmpayments.com'
+      : 'https://secure.paytmpayments.com',
+    path: '/theia/api/v1/initiateTransaction',
+    pathFor: (c, b) => '/theia/api/v1/initiateTransaction' +
+      `?mid=${encodeURIComponent(c.mid)}&orderId=${encodeURIComponent(b.ref)}`,
     headers: () => ({ 'content-type': 'application/json' }),
-    createBody: (venue, b, amount) => ({
-      body: {
-        mid: null,                       // filled from venue creds at call time
+    createBody: (venue, b, amount, c) => {
+      const body = {
+        requestType: 'Payment',
+        mid: c.mid,
         orderId: b.ref,
-        txnAmount: { value: String(amount.toFixed(2)), currency: 'INR' },
+        // WEBSTAGING on their sandbox, DEFAULT in production, unless the
+        // merchant registered a specific website name.
+        websiteName: c.websiteName || (c.env === 'sandbox' ? 'WEBSTAGING' : 'DEFAULT'),
+        txnAmount: { value: amount.toFixed(2), currency: 'INR' },
         userInfo: { custId: 'c' + b.customer },
         callbackUrl: process.env.PSP_WEBHOOK_URL
-      }
-    }),
-    path: '/theia/api/v1/initiateTransaction',
+      };
+      return { head: { version: 'v1', signature: paytmSign(JSON.stringify(body), c.merchantKey) }, body };
+    },
     readCreate: j => ({ token: j.body && j.body.txnToken, link: null }),
-    verify: (raw, headers, secret) => {
-      const j = JSON.parse(raw);
+    verify: (raw, headers, secret, c) => {
+      let j; try { j = JSON.parse(raw); } catch (e) { return false; }
       const sig = j.head && j.head.signature;
       if (!sig) return false;
-      const mac = crypto.createHmac('sha256', secret).update(JSON.stringify(j.body)).digest('base64');
-      return safeEq(mac, sig);
+      return paytmVerify(JSON.stringify(j.body), (c && c.merchantKey) || secret, sig);
     },
-    readHook: j => ({
-      ref: j.body && j.body.orderId,
-      amount: j.body && Number(j.body.txnAmount),
-      status: j.body && j.body.resultInfo && j.body.resultInfo.resultStatus,
-      utr: j.body && j.body.bankTxnId,
-      ok: !!(j.body && j.body.resultInfo && j.body.resultInfo.resultStatus === 'TXN_SUCCESS')
-    })
+    readHook: j => {
+      const bd = (j && j.body) || {};
+      const ri = bd.resultInfo || {};
+      const amt = Number(bd.txnAmount);
+      return {
+        ref: bd.orderId,
+        amount: isFinite(amt) ? amt : NaN,
+        status: ri.resultStatus,
+        utr: bd.bankTxnId || bd.txnId || null,
+        ok: ri.resultStatus === 'S' || ri.resultStatus === 'TXN_SUCCESS'
+      };
+    }
   }
 };
 
@@ -225,11 +288,11 @@ async function collect(venue, booking, amount) {
   if (!V) return null;
   const c = venue.psp;
   try {
-    const body = V.createBody(venue, booking, amount);
-    if (c.mid && body.body) body.body.mid = c.mid;
+    const body = V.createBody(venue, booking, amount, c);
+    const path = V.pathFor ? V.pathFor(c, booking) : V.path;
     // `await` on a plain object is a no-op, so sync vendors are unaffected. PhonePe
     // uses it to fetch (or reuse) its OAuth token.
-    const r = await fetch(baseOf(V, c) + V.path, {
+    const r = await fetch(baseOf(V, c) + path, {
       method: 'POST',
       headers: await V.headers(c),
       body: JSON.stringify(body)
