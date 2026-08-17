@@ -122,16 +122,35 @@ ready to paste — the five env values, and a `venues.js` block for the rest.
 Meta will only deliver messages to a public address with a valid HTTPS
 certificate. Your laptop does not qualify.
 
-1. **Fork** this repository to your own GitHub account, if you haven't already
-   (one button, top right).
-2. Go to [render.com](https://render.com), sign up, and choose
+**Get your own private copy** — nothing secret ever leaves it, but hours and
+rates in `venues.js` sit right there for anyone to read on a public fork, and
+GitHub has no "private fork" button. So this makes a private one instead:
+
+```bash
+git clone --bare https://github.com/asaraog/pakka
+cd pakka.git
+```
+
+Now create an empty **private** repository on GitHub (no README, no .gitignore —
+just the empty repo), then:
+
+```bash
+git push --mirror https://github.com/YOUR-USERNAME/pakka.git
+cd .. && rm -rf pakka.git
+git clone https://github.com/YOUR-USERNAME/pakka.git
+```
+
+That's a full private copy, editable exactly like a fork. To pull in later
+updates from the original: `git remote add upstream https://github.com/asaraog/pakka && git pull upstream main`.
+
+1. Go to [render.com](https://render.com), sign up, and choose
    **New → Blueprint**.
-3. Select your fork. Render reads `render.yaml` and configures itself.
-4. When prompted for environment variables, paste in the five values Step 4
+2. Select your repo. Render reads `render.yaml` and configures itself.
+3. When prompted for environment variables, paste in the five values Step 4
    printed: **`WA_PHONE_ID`**, **`WA_TOKEN`**, **`WABA_ID`**, **`OWNER_PHONE`**,
    **`VENUE_VPA`**. Also set **`WA_VERIFY_TOKEN`** to any word you invent —
    write it down, you type the same word into Meta in Step 6.
-5. Choose the **Starter** plan, about ₹600/month.
+4. Choose the **Starter** plan, about ₹600/month.
 
 ## Step 6 — Connect Meta to your server
 
