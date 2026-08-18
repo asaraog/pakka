@@ -10,6 +10,9 @@ same pattern fits any appointment-based business that takes an advance before
 the slot: clinics, salons, coaching classes, rental equipment. Edit `venues.js`
 to describe your own business instead of a turf.
 
+Don't want to run your own? [pakka.online](https://pakka.online) is the hosted
+version.
+
 ---
 
 ## Before you start
